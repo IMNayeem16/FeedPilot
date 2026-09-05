@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "FeedPilot AI",
+  "version": "0.1.0",
+  "description": "AI-powered YouTube feed personalization and filtering.",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["style.css"]
+    }
+  ]
+}
