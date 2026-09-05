@@ -1,378 +1,97 @@
 console.log("FeedPilot AI is running!");
 
-const processedVideos = new Set();
+const AI_ENDPOINT = "http://127.0.0.1:8000/classify";
+const pending = new Set();
 
+function extractVideo(card) {
+    const link = card.querySelector('a[href*="/watch?v="]');
+    if (!link) return null;
 
-// ==========================================
-// USER POLICY
-// ==========================================
+    let id;
+    try { id = new URL(link.href).searchParams.get("v"); }
+    catch { return null; }
+    if (!id) return null;
 
-const userPolicy = {
+    const titleEl = card.querySelector("#video-title");
+    const title = titleEl?.getAttribute("title") ||
+                  titleEl?.textContent?.trim() || "";
+    const channel = card.querySelector("ytd-channel-name")
+        ?.textContent?.trim() || "";
 
-    preferredTopics: [
-        "programming",
-        "game development",
-        "godot",
-        "python"
-    ],
+    if (!title) return null;
+    return { id, title, channel };
+}
 
-    blockedTopics: [
-        "reaction",
-        "prank",
-        "clickbait",
-        "pokemon"
-    ],
+function hide(card, reason) {
+    card.style.display = "none";
+    card.dataset.feedpilotBlocked = "true";
+    console.log("🚫 FeedPilot:", reason);
+}
 
-    preferLongVideos: true,
-    allowShorts: false
-};
-
-
-// ==========================================
-// EXTRACT VIDEO INFORMATION
-// ==========================================
-
-function extractVideo(videoCard) {
-
-    const link = videoCard.querySelector(
-        'a[href*="/watch?v="]'
-    );
-
-    if (!link) {
-        return null;
+function show(card) {
+    if (card.dataset.feedpilotBlocked === "true") {
+        card.style.display = "";
+        delete card.dataset.feedpilotBlocked;
     }
+}
 
-    const url = link.href;
-
-    let videoId;
+async function classifyVideo(card, video) {
+    if (pending.has(video.id)) return;
+    pending.add(video.id);
 
     try {
+        const response = await fetch(AI_ENDPOINT, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                title: video.title,
+                channel: video.channel
+            })
+        });
 
-        const urlObject = new URL(url);
+        if (!response.ok) throw new Error(`AI server: ${response.status}`);
 
-        videoId = urlObject.searchParams.get("v");
+        const result = await response.json();
+        console.log("🤖 FeedPilot AI:", video.title, result);
 
+        // High-confidence BLOCK only. Uncertain results stay visible.
+        if (result.label === "BLOCK" && result.confidence >= 0.70) {
+            hide(card, `AI BLOCK (${result.confidence.toFixed(2)})`);
+        } else {
+            show(card);
+        }
     } catch (error) {
-
-        return null;
+        // AI server is unavailable: don't break YouTube.
+        console.warn("FeedPilot AI unavailable:", error);
+    } finally {
+        pending.delete(video.id);
     }
-
-    if (!videoId) {
-        return null;
-    }
-
-
-    // TITLE
-
-    const titleElement =
-        videoCard.querySelector("#video-title") ||
-        videoCard.querySelector('[title]');
-
-    const title =
-        titleElement?.getAttribute("title") ||
-        titleElement?.textContent?.trim() ||
-        "Unknown title";
-
-
-    // CHANNEL
-
-    const channelElement =
-        videoCard.querySelector("ytd-channel-name");
-
-    const channel =
-        channelElement?.textContent?.trim() ||
-        "Unknown channel";
-
-
-    // THUMBNAIL
-
-    const thumbnailElement =
-        videoCard.querySelector("img");
-
-    const thumbnail =
-        thumbnailElement?.src ||
-        "";
-
-
-    // DURATION
-
-    const durationElement =
-        videoCard.querySelector(
-            "ytd-thumbnail-overlay-time-status-renderer"
-        );
-
-    const duration =
-        durationElement?.textContent?.trim() ||
-        "Unknown";
-
-
-    return {
-
-        id: videoId,
-
-        title: title,
-
-        channel: channel,
-
-        url: url,
-
-        thumbnail: thumbnail,
-
-        duration: duration
-
-    };
 }
 
-
-// ==========================================
-// CALCULATE RECOMMENDATION SCORE
-// ==========================================
-
-function calculateScore(video) {
-
-    let score = 50;
-
-    const text = (
-        video.title +
-        " " +
-        video.channel
-    ).toLowerCase();
-
-
-    // --------------------------------------
-    // PREFERRED TOPICS
-    // --------------------------------------
-
-    userPolicy.preferredTopics.forEach((topic) => {
-
-        if (text.includes(topic.toLowerCase())) {
-
-            score += 15;
-
-        }
-
-    });
-
-
-    // --------------------------------------
-    // BLOCKED TOPICS
-    // --------------------------------------
-
-    userPolicy.blockedTopics.forEach((topic) => {
-
-        if (text.includes(topic.toLowerCase())) {
-
-            score -= 40;
-
-        }
-
-    });
-
-
-    // --------------------------------------
-    // SHORTS
-    // --------------------------------------
-
-    if (!userPolicy.allowShorts) {
-
-        if (video.duration !== "Unknown") {
-
-            const parts = video.duration.split(":");
-
-            let seconds = 0;
-
-            if (parts.length === 2) {
-
-                seconds =
-                    Number(parts[0]) * 60 +
-                    Number(parts[1]);
-
-            }
-
-            if (seconds <= 60) {
-
-                score -= 40;
-
-            }
-        }
-    }
-
-
-    // Keep score between 0 and 100
-
-    score = Math.max(
-        0,
-        Math.min(100, score)
+function scan() {
+    const cards = document.querySelectorAll(
+        "ytd-rich-item-renderer, ytd-video-renderer, " +
+        "ytd-grid-video-renderer, ytd-compact-video-renderer"
     );
 
-    return score;
-}
-
-
-// ==========================================
-// CHECK SEARCH QUERY
-// ==========================================
-
-function isBlockedSearch() {
-
-    const url = new URL(window.location.href);
-
-    if (url.pathname !== "/results") {
-        return false;
-    }
-
-    const searchQuery =
-        url.searchParams
-            .get("search_query")
-            ?.toLowerCase() || "";
-
-
-    return userPolicy.blockedTopics.some((topic) => {
-
-        return searchQuery.includes(
-            topic.toLowerCase()
-        );
-
-    });
-}
-
-
-// ==========================================
-// HIDE VIDEO
-// ==========================================
-
-function hideVideo(videoCard, reason) {
-
-    videoCard.style.display = "none";
-
-    console.log(
-        "🚫 FeedPilot blocked video:",
-        reason
-    );
-}
-
-
-// ==========================================
-// SCAN VIDEOS
-// ==========================================
-
-function scanVideos() {
-
-    const videoCards = document.querySelectorAll(
-        "ytd-rich-item-renderer, ytd-video-renderer"
-    );
-
-
-    console.log(
-        `FeedPilot found ${videoCards.length} video cards.`
-    );
-
-
-    // --------------------------------------
-    // BLOCK ENTIRE SEARCH
-    // --------------------------------------
-
-    const blockedSearch = isBlockedSearch();
-
-
-    videoCards.forEach((card) => {
-
+    cards.forEach(card => {
         const video = extractVideo(card);
-
-        if (!video) {
-            return;
-        }
-
-
-        // ----------------------------------
-        // SEARCH QUERY BLOCK
-        // ----------------------------------
-
-        if (blockedSearch) {
-
-            hideVideo(
-                card,
-                "Blocked search topic"
-            );
-
-            return;
-        }
-
-
-        // ----------------------------------
-        // DON'T PROCESS TWICE
-        // ----------------------------------
-
-        if (processedVideos.has(video.id)) {
-
-            return;
-
-        }
-
-        processedVideos.add(video.id);
-
-
-        // ----------------------------------
-        // SCORE VIDEO
-        // ----------------------------------
-
-        const score =
-            calculateScore(video);
-
-
-        console.log(
-            "🎬 Video analyzed:",
-            {
-                ...video,
-                recommendationScore: score
-            }
-        );
-
-
-        // ----------------------------------
-        // HIDE LOW-SCORING VIDEOS
-        // ----------------------------------
-
-        if (score < 40) {
-
-            hideVideo(
-                card,
-                `Low recommendation score: ${score}`
-            );
-
-        }
-
+        if (video) classifyVideo(card, video);
     });
 }
 
-
-// ==========================================
-// INITIAL SCANS
-// ==========================================
-
-setTimeout(scanVideos, 1000);
-
-setTimeout(scanVideos, 3000);
-
-setTimeout(scanVideos, 5000);
-
-
-// ==========================================
-// WATCH FOR DYNAMIC CONTENT
-// ==========================================
-
-const observer =
-    new MutationObserver(() => {
-
-        scanVideos();
-
-    });
-
-
-observer.observe(document.body, {
-
-    childList: true,
-
-    subtree: true
-
+let timer;
+const observer = new MutationObserver(() => {
+    clearTimeout(timer);
+    timer = setTimeout(scan, 300);
 });
+
+function start() {
+    if (!document.body) return setTimeout(start, 500);
+    observer.observe(document.body, {childList: true, subtree: true});
+    scan();
+    setTimeout(scan, 1500);
+    setTimeout(scan, 4000);
+}
+
+start();

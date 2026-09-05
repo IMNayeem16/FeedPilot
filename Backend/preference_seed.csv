@@ -1,0 +1,9 @@
+preference,label,topic
+I don't want Pokemon videos,BLOCK,pokemon
+I don't want reaction videos,BLOCK,reaction
+I hate prank videos,BLOCK,prank
+I don't want celebrity drama,BLOCK,celebrity drama
+I like programming videos,KEEP,programming
+Show me game development,KEEP,game development
+I want Godot tutorials,KEEP,godot
+I like Python,KEEP,python

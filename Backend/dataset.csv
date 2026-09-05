@@ -1,24 +1,46 @@
 text,label
-"Pokemon gameplay",BLOCK
-"Pokemon Scarlet and Violet walkthrough",BLOCK
-"Best Pokemon teams",BLOCK
-"Pokemon news and updates",BLOCK
-"funny Pokemon moments",BLOCK
-"reaction to Pokemon trailer",BLOCK
-"celebrity drama explained",BLOCK
-"celebrity gossip",BLOCK
-"prank compilation",BLOCK
-"funny prank videos",BLOCK
-"reaction videos",BLOCK
-"my reaction to the new trailer",BLOCK
-"Python programming tutorial",KEEP
-"Learn Python from scratch",KEEP
-"Python automation project",KEEP
-"Godot game development tutorial",KEEP
-"How to make a 2D fighting game",KEEP
-"Godot 4 beginner tutorial",KEEP
-"Building a game with Python",KEEP
-"Machine learning with Python",KEEP
-"AI programming tutorial",KEEP
-"Game development tips",KEEP
-"How I built my indie game",KEEP
+Pokemon gameplay,BLOCK
+Pokemon Scarlet and Violet walkthrough,BLOCK
+Best Pokemon teams,BLOCK
+Pokemon news and updates,BLOCK
+funny Pokemon moments,BLOCK
+Pokemon battle strategy,BLOCK
+reaction to Pokemon trailer,BLOCK
+reaction videos,BLOCK
+my reaction to the new trailer,BLOCK
+celebrity drama explained,BLOCK
+celebrity gossip,BLOCK
+celebrity scandal,BLOCK
+prank compilation,BLOCK
+funny prank videos,BLOCK
+pranking my friends,BLOCK
+clickbait gaming video,BLOCK
+you won't believe what happened,BLOCK
+shocking celebrity news,BLOCK
+Python programming tutorial,KEEP
+Learn Python from scratch,KEEP
+Python automation project,KEEP
+Godot game development tutorial,KEEP
+How to make a 2D fighting game,KEEP
+Godot 4 beginner tutorial,KEEP
+Building a game with Python,KEEP
+Machine learning with Python,KEEP
+AI programming tutorial,KEEP
+Game development tips,KEEP
+How I built my indie game,KEEP
+FastAPI Python tutorial,KEEP
+Django web development,KEEP
+JavaScript programming tutorial,KEEP
+React web development,KEEP
+C# game development,KEEP
+Godot character controller,KEEP
+Godot combat system tutorial,KEEP
+Build an indie game from scratch,KEEP
+Learn software engineering,KEEP
+Python data structures,KEEP
+Git and GitHub tutorial,KEEP
+Machine learning classification tutorial,KEEP
+Train a text classifier,KEEP
+AI and natural language processing,KEEP
+Neural networks explained,KEEP
+How recommendation systems work,KEEP
